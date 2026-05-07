@@ -1,0 +1,17 @@
+# Maven
+target/
+
+# IDE
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# Logs
+*.log
+logs/
+
+# OS
+Thumbs.db
+Desktop.ini
