@@ -189,18 +189,28 @@ All controllers inject interfaces:
 
 ### Data Flow Diagram:
 ```
-Excel Files (data/)
+Step 1: User uploads "Sujets de Soutenance" Excel via website
     ↓
-[Member 1] ExcelImportService → Soutenance entities (unplanned)
+[Member 1] ExcelImportService → Soutenance entities (unplanned, with topics/students)
     ↓
 [Member 2] Planning Algorithm → Soutenance entities (planned, with date/room/jury)
     ↓
+[Member 2] Generate Fiche d'Évaluation (PDF/Excel) for each soutenance
+    ↓
+[Member 2] Store Fiches in folders named after each President
+    ↓
 [Member 1] REST Controllers → JSON (DTOs)
     ↓
-[Member 3] Angular Frontend ← Displays data
+[Member 3] Angular Frontend ← Displays data + downloadable fiches
     ↓
 [Member 4] Tests ← Validates everything
 ```
+
+### Excel Upload Workflow (Important!):
+- **NOT pre-loaded**: "Sujets de Soutenance" Excel files are NOT in `src/main/resources/data/`
+- **Uploaded later**: User uploads via website at `/api/soutenances/importer`
+- **Used for planning**: Member 2's algorithm uses this uploaded data to plan defenses
+- **Contains**: CNE, NOM, PRENOM, FILIÈRE, SUJET_PFE columns
 
 ### Who Uses What:
 | Member | Input | Output | Dependencies |
@@ -240,11 +250,12 @@ Excel Files (data/)
    - Room must be `disponible = true`
    - No double-booking (same room, same time)
 
-4. **Jury Assignment** (2-3 members):
-   - President: Senior professor, not in same filière as students
-   - Jurys: 2-3 professors, available at defense time
+4. **Jury Assignment** (EXACTLY 3 members total):
+   - **1 President**: Senior professor, not in same filière as students
+   - **2 Jury members**: Professors available at defense time (exactly 2, not more)
    - No conflicts: Same professor can't be in two defenses simultaneously
    - Balance jury workload across professors
+   - **Important**: Each soutenance MUST have exactly 1 president + 2 jury members (3 total)
 
 5. **Conflict Avoidance**:
    - Same professor: No overlapping defenses
@@ -253,6 +264,29 @@ Excel Files (data/)
 
 ### Output:
 Updated `Soutenance` objects with all fields populated, saved back via `ISoutenanceDAO.save()`.
+
+### Fiche d'Évaluation Generation (Post-Planning):
+After planning, for EACH soutenance:
+1. **Generate Fiche d'Évaluation**:
+   - Create evaluation form (PDF or Excel format)
+   - Include: Soutenance topic, student names, jury members, date/time
+   - Add scoring fields (technical score, presentation, jury comments)
+
+2. **Storage Structure**:
+   ```
+   fiches_evaluation/
+   ├── Dupont_Jean/              ← Folder named after PRESIDENT (nom_prenom)
+   │   ├── evaluation_001.pdf     ← Fiche for soutenance with Dupont as president
+   │   └── evaluation_002.pdf
+   ├── Martin_Marie/
+   │   └── evaluation_003.pdf
+   └── ...
+   ```
+
+3. **Implementation**:
+   - Use `Soutenance.getPresident().getNom()` + `getPrenom()` for folder name
+   - Store in `src/main/resources/fiches_evaluation/` or configurable path
+   - Make fiches downloadable via REST endpoint: `GET /api/soutenances/{id}/evaluation`
 
 ---
 
