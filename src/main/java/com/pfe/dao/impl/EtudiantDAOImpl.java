@@ -2,70 +2,58 @@ package com.pfe.dao.impl;
 
 import com.pfe.dao.interfaces.IEtudiantDAO;
 import com.pfe.model.Etudiant;
-import com.pfe.config.HibernateUtil;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
+@Repository
+@Transactional
 public class EtudiantDAOImpl implements IEtudiantDAO {
+    
+    @Autowired
+    private SessionFactory sessionFactory;
+
     @Override
     public void save(Etudiant etudiant) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                session.persist(etudiant);
-                tx.commit();
-            } catch (Exception e) {
-                tx.rollback();
-                throw new RuntimeException("Erreur sauvegarde étudiant", e);
-            }
-        }
+        sessionFactory.getCurrentSession().persist(etudiant);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Etudiant findById(Long id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.get(Etudiant.class, id);
-        }
+        return sessionFactory.getCurrentSession().get(Etudiant.class, id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Etudiant findByCne(String cne) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Query<Etudiant> query = session.createQuery("FROM Etudiant WHERE cne = :cne", Etudiant.class);
-            query.setParameter("cne", cne);
-            return query.uniqueResult();
-        }
+        return sessionFactory.getCurrentSession()
+                .createQuery("FROM Etudiant WHERE cne = :cne", Etudiant.class)
+                .setParameter("cne", cne)
+                .uniqueResult();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Etudiant> findAll() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("FROM Etudiant", Etudiant.class).list();
-        }
+        return sessionFactory.getCurrentSession()
+                .createQuery("FROM Etudiant", Etudiant.class)
+                .list();
     }
 
     @Override
     public void delete(Long id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                Etudiant e = session.get(Etudiant.class, id);
-                if (e != null) session.remove(e);
-                tx.commit();
-            } catch (Exception e) {
-                tx.rollback();
-                throw new RuntimeException("Erreur suppression étudiant", e);
-            }
-        }
+        Etudiant e = findById(id);
+        if (e != null) sessionFactory.getCurrentSession().remove(e);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public long count() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Query<Long> query = session.createQuery("SELECT COUNT(e) FROM Etudiant e", Long.class);
-            return query.uniqueResult();
-        }
+        return sessionFactory.getCurrentSession()
+                .createQuery("SELECT COUNT(e) FROM Etudiant e", Long.class)
+                .uniqueResult();
     }
 }

@@ -1,27 +1,31 @@
 package com.pfe.config;
 
-import com.pfe.dao.impl.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
 import com.pfe.dao.interfaces.*;
 import com.pfe.model.*;
-import jakarta.servlet.ServletContextEvent;
-import jakarta.servlet.ServletContextListener;
-import jakarta.servlet.annotation.WebListener;
 import org.apache.poi.ss.usermodel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.IOException;
 import java.io.InputStream;
 
-@WebListener
-public class DataInitializer implements ServletContextListener {
+@Component
+public class DataInitializer {
     private static final Logger logger = LoggerFactory.getLogger(DataInitializer.class);
-    private final IFiliereDAO filiereDAO = new FiliereDAOImpl();
-    private final ISalleDAO salleDAO = new SalleDAOImpl();
-    private final IProfesseurDAO professeurDAO = new ProfesseurDAOImpl();
-    private final IEtudiantDAO etudiantDAO = new EtudiantDAOImpl();
+    
+    @Autowired
+    private IFiliereDAO filiereDAO;
+    @Autowired
+    private ISalleDAO salleDAO;
+    @Autowired
+    private IProfesseurDAO professeurDAO;
+    @Autowired
+    private IEtudiantDAO etudiantDAO;
 
-    @Override
-    public void contextInitialized(ServletContextEvent sce) {
+    @EventListener(ContextRefreshedEvent.class)
+    public void onApplicationEvent(ContextRefreshedEvent event) {
         logger.info("Initialisation des données...");
         initFilieres();
         initSalles();
@@ -113,10 +117,5 @@ public class DataInitializer implements ServletContextListener {
             case NUMERIC -> String.valueOf((long) cell.getNumericCellValue());
             default -> "";
         };
-    }
-
-    @Override
-    public void contextDestroyed(ServletContextEvent sce) {
-        HibernateUtil.shutdown();
     }
 }

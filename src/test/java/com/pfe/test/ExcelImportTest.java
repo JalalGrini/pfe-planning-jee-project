@@ -1,16 +1,24 @@
 package com.pfe.test;
 
-import com.pfe.model.Soutenance;
+import com.pfe.config.AppConfig;
 import com.pfe.service.ExcelImportService;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.io.InputStream;
-import java.util.List;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = AppConfig.class)
 public class ExcelImportTest {
+    
+    @Autowired
+    private ExcelImportService service;
+
     @Test
     void testImport() throws Exception {
-        ExcelImportService service = new ExcelImportService();
         InputStream is = getClass().getClassLoader().getResourceAsStream("data/exemples_soutenances.xlsx");
         assertNotNull(is, "Fichier exemples_soutenances.xlsx introuvable");
         List<Soutenance> list = service.importerSoutenances(is);

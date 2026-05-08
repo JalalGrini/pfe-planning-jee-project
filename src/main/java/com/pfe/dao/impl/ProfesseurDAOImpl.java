@@ -2,61 +2,49 @@ package com.pfe.dao.impl;
 
 import com.pfe.dao.interfaces.IProfesseurDAO;
 import com.pfe.model.Professeur;
-import com.pfe.config.HibernateUtil;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
+@Repository
+@Transactional
 public class ProfesseurDAOImpl implements IProfesseurDAO {
+    
+    @Autowired
+    private SessionFactory sessionFactory;
+
     @Override
     public void save(Professeur professeur) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                session.persist(professeur);
-                tx.commit();
-            } catch (Exception e) {
-                tx.rollback();
-                throw new RuntimeException("Erreur sauvegarde professeur", e);
-            }
-        }
+        sessionFactory.getCurrentSession().persist(professeur);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Professeur findById(Long id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.get(Professeur.class, id);
-        }
+        return sessionFactory.getCurrentSession().get(Professeur.class, id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Professeur> findAll() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("FROM Professeur", Professeur.class).list();
-        }
+        return sessionFactory.getCurrentSession()
+                .createQuery("FROM Professeur", Professeur.class)
+                .list();
     }
 
     @Override
     public void delete(Long id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                Professeur p = session.get(Professeur.class, id);
-                if (p != null) session.remove(p);
-                tx.commit();
-            } catch (Exception e) {
-                tx.rollback();
-                throw new RuntimeException("Erreur suppression professeur", e);
-            }
-        }
+        Professeur p = findById(id);
+        if (p != null) sessionFactory.getCurrentSession().remove(p);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public long count() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Query<Long> query = session.createQuery("SELECT COUNT(p) FROM Professeur p", Long.class);
-            return query.uniqueResult();
-        }
+        return sessionFactory.getCurrentSession()
+                .createQuery("SELECT COUNT(p) FROM Professeur p", Long.class)
+                .uniqueResult();
     }
 }

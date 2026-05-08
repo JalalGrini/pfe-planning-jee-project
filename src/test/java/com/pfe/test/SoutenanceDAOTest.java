@@ -1,16 +1,24 @@
 package com.pfe.test;
 
-import com.pfe.dao.impl.SoutenanceDAOImpl;
+import com.pfe.config.AppConfig;
 import com.pfe.dao.interfaces.ISoutenanceDAO;
 import com.pfe.model.Soutenance;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.transaction.annotation.Transactional;
+
 import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = AppConfig.class)
+@Transactional
 public class SoutenanceDAOTest {
-    private static ISoutenanceDAO dao;
-
-    @BeforeAll
-    static void setup() { dao = new SoutenanceDAOImpl(); }
+    
+    @Autowired
+    private ISoutenanceDAO dao;
 
     @Test
     void testSave() {
@@ -27,7 +35,4 @@ public class SoutenanceDAOTest {
         dao.save(s);
         assertTrue(dao.findNonPlannifiees().size() >= 1);
     }
-
-    @AfterAll
-    static void tearDown() { com.pfe.config.HibernateUtil.shutdown(); }
 }

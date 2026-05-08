@@ -2,70 +2,58 @@ package com.pfe.dao.impl;
 
 import com.pfe.dao.interfaces.IFiliereDAO;
 import com.pfe.model.Filiere;
-import com.pfe.config.HibernateUtil;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
+@Repository
+@Transactional
 public class FiliereDAOImpl implements IFiliereDAO {
+    
+    @Autowired
+    private SessionFactory sessionFactory;
+
     @Override
     public void save(Filiere filiere) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                session.persist(filiere);
-                tx.commit();
-            } catch (Exception e) {
-                tx.rollback();
-                throw new RuntimeException("Erreur sauvegarde filière", e);
-            }
-        }
+        sessionFactory.getCurrentSession().persist(filiere);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Filiere findById(Long id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.get(Filiere.class, id);
-        }
+        return sessionFactory.getCurrentSession().get(Filiere.class, id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Filiere findByNom(String nom) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Query<Filiere> query = session.createQuery("FROM Filiere WHERE nom = :nom", Filiere.class);
-            query.setParameter("nom", nom);
-            return query.uniqueResult();
-        }
+        return sessionFactory.getCurrentSession()
+                .createQuery("FROM Filiere WHERE nom = :nom", Filiere.class)
+                .setParameter("nom", nom)
+                .uniqueResult();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Filiere> findAll() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("FROM Filiere", Filiere.class).list();
-        }
+        return sessionFactory.getCurrentSession()
+                .createQuery("FROM Filiere", Filiere.class)
+                .list();
     }
 
     @Override
     public void delete(Long id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                Filiere f = session.get(Filiere.class, id);
-                if (f != null) session.remove(f);
-                tx.commit();
-            } catch (Exception e) {
-                tx.rollback();
-                throw new RuntimeException("Erreur suppression filière", e);
-            }
-        }
+        Filiere f = findById(id);
+        if (f != null) sessionFactory.getCurrentSession().remove(f);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public long count() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Query<Long> query = session.createQuery("SELECT COUNT(f) FROM Filiere f", Long.class);
-            return query.uniqueResult();
-        }
+        return sessionFactory.getCurrentSession()
+                .createQuery("SELECT COUNT(f) FROM Filiere f", Long.class)
+                .uniqueResult();
     }
 }

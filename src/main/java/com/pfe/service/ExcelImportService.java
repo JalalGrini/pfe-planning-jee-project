@@ -1,30 +1,25 @@
 package com.pfe.service;
 
-import com.pfe.config.HibernateUtil;
 import com.pfe.dao.interfaces.IFiliereDAO;
-import com.pfe.dao.impl.FiliereDAOImpl;
 import com.pfe.model.Etudiant;
 import com.pfe.model.Filiere;
 import com.pfe.model.Soutenance;
 import org.apache.poi.ss.usermodel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
+@Service
 public class ExcelImportService {
     private static final Logger logger = LoggerFactory.getLogger(ExcelImportService.class);
-    private final IFiliereDAO filiereDAO = new FiliereDAOImpl();
+    
+    @Autowired
+    private IFiliereDAO filiereDAO;
 
-    /**
-     * Importe les soutenances depuis un fichier Excel (colonnes : CNE, NOM, PRENOM, FILIERE, SUJET_PFE).
-     * Détecte les binômes (même SUJET_PFE) et ignore les lignes avec filière inexistante.
-     * Les champs date, heure, salle, président, jurys sont null.
-     * @param excelFile flux du fichier Excel
-     * @return liste de soutenances importées
-     * @throws IOException erreur de lecture
-     */
     public List<Soutenance> importerSoutenances(InputStream excelFile) throws IOException {
         List<Soutenance> soutenances = new ArrayList<>();
         Map<String, List<Etudiant>> sujetToEtudiants = new HashMap<>();
@@ -32,7 +27,7 @@ public class ExcelImportService {
         try (Workbook workbook = WorkbookFactory.create(excelFile)) {
             Sheet sheet = workbook.getSheetAt(0);
             Iterator<Row> rowIterator = sheet.iterator();
-            if (rowIterator.hasNext()) rowIterator.next(); // Ignorer l'en-tête
+            if (rowIterator.hasNext()) rowIterator.next();
 
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();

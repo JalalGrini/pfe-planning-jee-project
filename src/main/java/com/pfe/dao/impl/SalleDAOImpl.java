@@ -2,61 +2,49 @@ package com.pfe.dao.impl;
 
 import com.pfe.dao.interfaces.ISalleDAO;
 import com.pfe.model.Salle;
-import com.pfe.config.HibernateUtil;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
+@Repository
+@Transactional
 public class SalleDAOImpl implements ISalleDAO {
+    
+    @Autowired
+    private SessionFactory sessionFactory;
+
     @Override
     public void save(Salle salle) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                session.persist(salle);
-                tx.commit();
-            } catch (Exception e) {
-                tx.rollback();
-                throw new RuntimeException("Erreur sauvegarde salle", e);
-            }
-        }
+        sessionFactory.getCurrentSession().persist(salle);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Salle findById(Long id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.get(Salle.class, id);
-        }
+        return sessionFactory.getCurrentSession().get(Salle.class, id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Salle> findAll() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("FROM Salle", Salle.class).list();
-        }
+        return sessionFactory.getCurrentSession()
+                .createQuery("FROM Salle", Salle.class)
+                .list();
     }
 
     @Override
     public void delete(Long id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                Salle s = session.get(Salle.class, id);
-                if (s != null) session.remove(s);
-                tx.commit();
-            } catch (Exception e) {
-                tx.rollback();
-                throw new RuntimeException("Erreur suppression salle", e);
-            }
-        }
+        Salle s = findById(id);
+        if (s != null) sessionFactory.getCurrentSession().remove(s);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public long count() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Query<Long> query = session.createQuery("SELECT COUNT(s) FROM Salle s", Long.class);
-            return query.uniqueResult();
-        }
+        return sessionFactory.getCurrentSession()
+                .createQuery("SELECT COUNT(s) FROM Salle s", Long.class)
+                .uniqueResult();
     }
 }
