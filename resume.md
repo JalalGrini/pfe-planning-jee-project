@@ -1,98 +1,422 @@
-# PFE Planning Project - Presentation for Professor Validation
+# PFE Planning Project - Complete Team Documentation
 
-## Project Overview
-This is a fully functional Spring MVC 6 (classic, non-Boot) backend application for managing PFE defense planning, ready for professor validation. 
+## 1. Project Global Description
 
-**Technology Stack:**
-- Java 17
-- Spring MVC 6.0.x (JavaConfig, zero XML)
-- Hibernate 6.3.1.Final via Spring ORM
-- H2 Database (dev) / MySQL 8.x (prod)
-- Apache POI 5.2.5 for Excel imports
-- Jackson 2.16.0 for JSON REST API
-- JUnit 5.10.0 + Spring Test
+### Context
+This project is a web application for managing PFE (Projet de Fin d'Études) defense planning at the engineering school. It handles the complete workflow from importing student data to scheduling defense sessions.
 
-## What's Already Implemented (Member 1 - Complete)
-All components are stable and ready for the next members to build upon:
+### Objective
+Build a system that:
+- Imports students, professors, and defense topics from Excel files
+- Allows planning defense sessions (dates, times, rooms, jury members)
+- Provides REST APIs for frontend consumption
+- Displays statistics and planning results
 
-1. **Model Layer** (`com.pfe.model`): 5 JPA entities (Filiere, Etudiant, Professeur, Salle, Soutenance)
-2. **DAO Interfaces** (`com.pfe.dao.interfaces`): 6 stable interfaces (IEtudiantDAO, IProfesseurDAO, ISalleDAO, ISoutenanceDAO, IFiliereDAO, IPlanningDAO) - **use these exclusively**
-3. **DTO Layer** (`com.pfe.dto`): 5 DTOs (EtudiantDTO, ProfesseurDTO, SalleDTO, CreneauDTO, SoutenanceDTO) for JSON serialization
-4. **DAO Implementations** (`com.pfe.dao.impl`): 6 `@Repository` classes with `@Transactional` support
-5. **REST API** (`com.pfe.controller`): 4 `@RestController` classes with endpoints:
-   - `GET /api/soutenances?filter=/non-plannifiees` - List defenses
-   - `POST /api/soutenances/importer` - Excel import
-   - `GET /api/professeurs` - List professors
-   - `GET /api/salles` - List rooms
-   - `GET /api/statistiques` - Statistics
-6. **Service Layer** (`com.pfe.service`): `ExcelImportService` for importing students/defenses from Excel
-7. **Configuration** (`com.pfe.config`): Pure JavaConfig (AppConfig, DatabaseConfig, WebConfig, DataInitializer)
-8. **Tests** (`src/test/java/com/pfe/test`): 3 Spring Test + JUnit 5 test classes
-9. **Data Initialization**: Auto-creates 3 filières, 4 rooms, imports professors/students from Excel files
+### Business Rules (Non-Negotiable)
+1. **Defense Planning Rules**:
+   - Each defense has 1-2 students (binômes detected automatically)
+   - Each defense needs: 1 president, 2-3 jury members, 1 room
+   - No scheduling conflicts: same professor/room at same time
+   - Defenses grouped by filière (Ingénierie des Données, Génie Informatique, Transformation Digitale & IA)
 
-## Task Division for Other Members (Validation Flow)
+2. **Red Lines** (What NOT to do):
+   - ❌ No automatic date/time assignment (Member 2's job)
+   - ❌ No room assignment (Member 2's job)
+   - ❌ No jury/president assignment (Member 2's job)
+   - ❌ No PDF generation
+   - ❌ No dashboard/graph creation (Member 3's job)
+   - ❌ No file tree display (Member 4's job)
 
-The following tasks are sequential and end with the frontend presentation for the professor:
+---
 
-### Step 1: Member 2 - Planning Algorithm Implementation
-**Goal**: Implement the core scheduling logic that professors will validate.
+## 2. Technical Stack (Spring MVC Classic - NO Spring Boot)
 
-**What to work on**: `com.pfe.dao.impl.PlanningDAOImpl` (currently returns unplanned defenses)
+### Core Framework
+- **Java 17** (LTS version)
+- **Spring MVC 6.0.x** (Classic, XML-free, JavaConfig only)
+- **Spring ORM 6.0.x** (Hibernate integration)
+- **Spring Test 6.0.x** (Unit/integration testing)
 
-**Available interfaces** (do NOT modify these):
-- `ISoutenanceDAO` - Get unplanned defenses, update planned defenses
-- `ISalleDAO` - Get available rooms  
+### Data Layer
+- **Hibernate 6.3.1.Final** (JPA implementation via Spring ORM)
+- **H2 Database 2.2.224** (Development, in-memory, create-drop)
+- **MySQL 8.1.0** (Production, update mode)
+
+### Utilities
+- **Apache POI 5.2.5** (Excel file reading)
+- **Jackson 2.16.0** (JSON serialization/deserialization)
+- **JUnit 5.10.0** (Testing framework)
+- **Spring Test** (Integration testing with Spring context)
+- **Logback 1.4.11** (Logging)
+
+### Infrastructure
+- **Maven 3.9+** (Build tool)
+- **Tomcat 10.x** (Servlet container, Jakarta EE 6)
+- **Jakarta Servlet API 6.0** (Web layer)
+
+### Key Point
+This is **NOT Spring Boot**. It's classic Spring MVC with:
+- JavaConfig (`@Configuration` classes) instead of XML
+- `DispatcherServlet` configured via `web.xml`
+- Manual `LocalSessionFactoryBean` and `HibernateTransactionManager` setup
+- WAR packaging for Tomcat deployment
+
+---
+
+## 3. Detailed Structure - What EACH Member Should Do
+
+### Member 1 (YOU - Complete ✅)
+**Deliverables (All Done)**:
+1. **Model Layer** (`com.pfe.model`): 5 JPA entities
+   - `Filiere.java`, `Etudiant.java`, `Professeur.java`, `Salle.java`, `Soutenance.java`
+2. **DAO Interfaces** (`com.pfe.dao.interfaces`): 6 stable interfaces
+   - `IEtudiantDAO`, `IProfesseurDAO`, `ISalleDAO`, `ISoutenanceDAO`, `IFiliereDAO`, `IPlanningDAO`
+3. **DTO Layer** (`com.pfe.dto`): 5 DTOs for JSON
+   - `EtudiantDTO`, `ProfesseurDTO`, `SalleDTO`, `CreneauDTO`, `SoutenanceDTO`
+4. **DAO Implementations** (`com.pfe.dao.impl`): 6 `@Repository` classes
+   - All use `@Transactional`, injected `SessionFactory`
+5. **REST Controllers** (`com.pfe.controller`): 4 `@RestController` classes
+   - `SoutenanceController`, `ProfesseurController`, `SalleController`, `StatistiquesController`
+6. **Service Layer** (`com.pfe.service`): `ExcelImportService` (`@Service`)
+7. **Configuration** (`com.pfe.config`): Pure JavaConfig
+   - `AppConfig`, `DatabaseConfig`, `WebConfig`, `DataInitializer`, `SecurityConfig`
+8. **Tests** (`src/test/java/com/pfe/test`): 3 Spring Test classes
+9. **Resources**: Excel files in `src/main/resources/data/`
+
+---
+
+### Member 2 (Planning Algorithm)
+**What to Work On**: `com.pfe.dao.impl.PlanningDAOImpl.java`
+
+**Available Interfaces** (DO NOT modify):
+- `ISoutenanceDAO` - Get unplanned defenses, update planned ones
+- `ISalleDAO` - Get available rooms
 - `IProfesseurDAO` - Get jury members/presidents
 - `IFiliereDAO` - Access filière data
 
-**Deliverable**: Functional algorithm that assigns dates, times, rooms, presidents and jury members to unplanned defenses (currently stored with null planning fields).
+**Task**: Implement `getDonneesPlanification()` method to:
+1. Retrieve all unplanned defenses (date = null)
+2. Assign dates/times based on business rules
+3. Assign available rooms
+4. Assign presidents and jury members (no conflicts)
+5. Save planned defenses back to database
 
-**No changes needed**: Model entities, DTOs, other DAO interfaces, controllers (all stable).
+**Deliverable**: Functional planning algorithm that transforms unplanned defenses into fully scheduled sessions.
 
----
-
-### Step 2: Member 4 - Testing & Validation
-**Goal**: Ensure all backend logic works perfectly before frontend integration.
-
-**What to work on**: Existing test classes in `src/test/java/com/pfe/test/`, add new tests for Member 2's planning algorithm.
-
-**Use**: Spring Test context with `@ExtendWith(SpringExtension.class)`, `application.properties` for H2 in-memory testing.
-
-**Deliverables**:
-- 100% passing tests covering all backend functionality
-- Validation that all REST endpoints return correct JSON
-- Bug fixes if any issues are found in the backend
-
-**No changes needed**: Core backend logic (only fix bugs if found during testing).
+**No Changes Needed**: Model, DTOs, other DAO interfaces, controllers (all stable).
 
 ---
 
-### Step 3: Member 3 - Frontend Development (Final Presentation)
-**Goal**: Create the final interface that the professor will use to validate the entire project.
+### Member 3 (Frontend - Angular)
+**What to Work On**: New Angular project (separate repo/folder)
 
-**What to work on**: New Angular project (separate from this backend repo).
-
-**Use**: All existing REST endpoints return JSON matching the DTO structure exactly (no backend changes needed).
+**Use**: All existing REST endpoints return JSON matching DTO structure exactly.
 
 **Deliverables**:
-- Angular app with views for:
-  - Listing defenses, professors, rooms
-  - Excel import interface for defenses
-  - Statistics dashboard with charts
-  - **Planning results display** (showing Member 2's algorithm output)
-- Clean, professional UI for professor demonstration
+- Angular 15+ app with routes for:
+  1. **Home/Stats Dashboard**: Call `/api/statistiques`, display counts
+  2. **Defenses List**: Call `/api/soutenances`, display table
+  3. **Professors List**: Call `/api/professeurs`, display cards
+  4. **Rooms List**: Call `/api/salles`, display grid
+  5. **Excel Import Page**: Form with file upload to `/api/soutenances/importer`
+  6. **Planning Results**: Display Member 2's algorithm output
+- Clean UI with Bootstrap/Material for professor presentation
+- HTTP client service to consume REST APIs
 
-**No backend changes needed**: All endpoints are stable, tested, and ready for frontend consumption.
+**No Backend Changes Needed**: All endpoints are stable and tested.
 
-## How to Run for Professor Validation
-1. **Compile**: Run `mvn clean compile` in project root
-2. **Test**: Run `mvn test` to see all tests pass
-3. **Deploy to Tomcat 10+**: WAR file generated in `target/pfe-planning.war`
-4. **Access REST API**: `http://localhost:8080/pfe-planning/api/...`
-5. **Professor validates**: Through Member 3's Angular frontend connected to these endpoints
+---
 
-## Important Notes for All Members
-- **Weak coupling preserved**: Only use `com.pfe.dao.interfaces.*` and `com.pfe.dto.*`
-- **No need to understand** `com.pfe.dao.impl.*`, `com.pfe.config.*`, or `com.pfe.model.*`
-- **All REST endpoints are stable** - JSON format will not change
-- **Excel files** are in `src/main/resources/data/` for testing imports
+### Member 4 (Testing & Validation)
+**What to Work On**: 
+- Existing tests in `src/test/java/com/pfe/test/`
+- New tests for Member 2's planning algorithm
+- Validation of all REST endpoints
+
+**Use**: 
+- Spring Test context with `@ExtendWith(SpringExtension.class)`
+- `application.properties` for H2 in-memory testing
+- `mvn test` to run all tests
+
+**Deliverables**:
+1. **100% test coverage** for all backend functionality
+2. **Integration tests** for REST endpoints (using `MockMvc`)
+3. **Validation report** showing all endpoints return correct JSON
+4. **Bug fixes** if any issues found in backend
+5. **Production config** validation with MySQL
+
+**No Core Changes Needed**: Only fix bugs if found during testing.
+
+---
+
+## 4. Weak Coupling Constraints (Explained Simply)
+
+### What is Weak Coupling?
+Weak coupling means each member works independently without needing to understand others' code internals.
+
+### What's EXPOSED (Use These Only):
+```
+com.pfe.dao.interfaces.*  (6 interfaces)
+com.pfe.dto.*              (5 DTOs)
+```
+- Member 2: Uses interfaces to access data, DTOs for data transfer
+- Member 3: Consumes REST APIs returning DTOs as JSON
+- Member 4: Tests using interfaces, validates DTO JSON format
+
+### What's HIDDEN (Never Access Directly):
+```
+com.pfe.dao.impl.*    (Implementation details - HOW data is fetched)
+com.pfe.model.*       (JPA entities - database structure)
+com.pfe.config.*      (Spring configuration - setup details)
+com.pfe.service.*      (Excel import logic - internal processing)
+```
+
+### Why This Matters:
+- **Member 2** doesn't need to know HOW `EtudiantDAOImpl` fetches data (only uses `IEtudiantDAO` interface)
+- **Member 3** doesn't need to know backend exists (only calls REST URLs)
+- **Member 4** doesn't need to know Spring config (only writes tests against interfaces)
+
+### Proof of Compliance:
+All controllers inject interfaces:
+```java
+@Autowired private ISoutenanceDAO soutenanceDAO;  // Interface, not impl
+@Autowired private IProfesseurDAO professeurDAO;    // Interface, not impl
+```
+
+---
+
+## 5. Workflow Between Members (Dependencies)
+
+### Data Flow Diagram:
+```
+Excel Files (data/)
+    ↓
+[Member 1] ExcelImportService → Soutenance entities (unplanned)
+    ↓
+[Member 2] Planning Algorithm → Soutenance entities (planned, with date/room/jury)
+    ↓
+[Member 1] REST Controllers → JSON (DTOs)
+    ↓
+[Member 3] Angular Frontend ← Displays data
+    ↓
+[Member 4] Tests ← Validates everything
+```
+
+### Who Uses What:
+| Member | Input | Output | Dependencies |
+|--------|-------|--------|-------------|
+| **Member 1** | Excel files, requirements | REST APIs, JavaConfig | None (done) |
+| **Member 2** | `IPlanningDAO.getDonneesPlanification()` | Updates Soutenance entities | Uses interfaces from M1 |
+| **Member 3** | REST endpoints (JSON) | Angular UI | Consumes APIs from M1 |
+| **Member 4** | All backend code | Test reports, bug fixes | Tests work from M1 + M2 |
+
+### Critical Rule:
+**Member 2, 3, 4**: If you need to change something in `com.pfe.model.*` or `com.pfe.dao.impl.*`, ask Member 1 first!
+
+---
+
+## 6. Business Rules for Member 2 (Planning Algorithm)
+
+### Input Data (from `IPlanningDAO.getDonneesPlanification()`):
+- List of `Soutenance` objects with:
+  - `titre` (topic), `etudiants` (1-2 students), `filiere`
+  - `date = null`, `heureDebut = null`, `heureFin = null`
+  - `salle = null`, `president = null`, `jurys = []`
+
+### Assignment Rules:
+1. **Date Assignment**:
+   - Defenses Monday to Friday only
+   - No weekend defenses
+   - Group by filière (same filière defenses on same day if possible)
+
+2. **Time Assignment**:
+   - Defense duration: 30-45 minutes
+   - Morning session: 08:30-12:00
+   - Afternoon session: 14:00-17:30
+   - 15-minute break between defenses
+
+3. **Room Assignment**:
+   - Room capacity ≥ number of attendees (students + jury + audience)
+   - Room must be `disponible = true`
+   - No double-booking (same room, same time)
+
+4. **Jury Assignment** (2-3 members):
+   - President: Senior professor, not in same filière as students
+   - Jurys: 2-3 professors, available at defense time
+   - No conflicts: Same professor can't be in two defenses simultaneously
+   - Balance jury workload across professors
+
+5. **Conflict Avoidance**:
+   - Same professor: No overlapping defenses
+   - Same room: No overlapping defenses
+   - Student binômes: Must be in same defense (already handled by import)
+
+### Output:
+Updated `Soutenance` objects with all fields populated, saved back via `ISoutenanceDAO.save()`.
+
+---
+
+## 7. REST Endpoints for Member 4 (Testing)
+
+### Base URL: `http://localhost:8080/pfe-planning/api`
+
+### Endpoint List:
+
+#### 1. Get All Defenses
+```
+GET /soutenances
+Response: List<SoutenanceDTO> (JSON array)
+```
+
+#### 2. Get Unplanned Defenses
+```
+GET /soutenances?filter=/non-plannifiees
+Response: List<SoutenanceDTO> where date is null
+```
+
+#### 3. Import Defenses from Excel
+```
+POST /soutenances/importer
+Content-Type: multipart/form-data
+Body: file=<excel-file>
+Response: {"message": "Import réussi", "count": N}
+```
+
+#### 4. Get All Professors
+```
+GET /professeurs
+Response: List<ProfesseurDTO> (JSON array)
+```
+
+#### 5. Get All Rooms
+```
+GET /salles
+Response: List<SalleDTO> (JSON array)
+```
+
+#### 6. Get Statistics
+```
+GET /statistiques
+Response: {
+  "nbEtudiants": 79,
+  "nbProfesseurs": 32,
+  "nbSalles": 4,
+  "nbFilieres": 3,
+  "nbSoutenancesNonPlannifiees": 39
+}
+```
+
+### JSON Format Examples:
+
+**SoutenanceDTO**:
+```json
+{
+  "id": 1,
+  "titre": "Machine Learning Application",
+  "date": "2026-06-15",
+  "heureDebut": "09:00:00",
+  "heureFin": "09:45:00",
+  "salle": {"id": 1, "nom": "Salle 101", "capacite": 30, "disponible": true},
+  "president": {"id": 5, "nom": "Dupont", "prenom": "Jean", "discipline": "IA"},
+  "jurys": [{"id": 6, "nom": "Martin", "prenom": "Marie"}],
+  "etudiants": [{"id": 1, "cne": "CNE001", "nom": "Nom1", "prenom": "Prenom1"}],
+  "filiereId": 1,
+  "filiereNom": "Ingénierie des Données"
+}
+```
+
+---
+
+## 8. Excel File Format for Upload (Explanations for Other Members)
+
+### File 1: `Liste des Profs.xlsx` (Professor List)
+**Location**: `src/main/resources/data/`
+**Used by**: DataInitializer (auto-import on startup)
+**Columns** (cell positions):
+- Cell 0: Nom (Last name)
+- Cell 1: Prenom (First name)
+- Cell 2: Discipline (Department)
+
+**Important**: Header row is ignored. Professors auto-saved to database on application startup.
+
+---
+
+### File 2: Student Files (3 files)
+**Location**: `src/main/resources/data/`
+- `Ingénierie des données 3_Email.xlsx`
+- `Génie Informatique 3 Option GL_Email.xlsx`
+- `Transformation Digitale & Intelligence Artificielle 3_Email.xlsx`
+
+**Columns** (cell positions):
+- Cell 0: CNE (Student ID)
+- Cell 1: NOM (Last name)
+- Cell 2: PRENOM (First name)
+- Cell 3: EMAIL PERSONNEL (Personal email)
+- Cell 4: EMAIL ACADEMIQUE (Academic email)
+
+**Important**: Header row ignored. Students linked to their filière based on filename.
+
+---
+
+### File 3: `exemples_soutenances.xlsx` (Example Defenses)
+**Location**: `src/main/resources/data/`
+**Used by**: `ExcelImportTest.java` (test file)
+**Columns** (cell positions):
+- Cell 0: CNE (Student ID)
+- Cell 1: NOM (Last name)
+- Cell 2: PRENOM (First name)
+- Cell 3: FILIERE (Filière name)
+- Cell 4: SUJET_PFE (Defense topic/title)
+
+**Import Logic**:
+1. Groups students by `SUJET_PFE` (detects binômes with same topic)
+2. Creates `Soutenance` object per topic
+3. Links students to soutenance
+4. Sets `date/heureDebut/heureFin` = null (unplanned)
+5. Sets `salle/president/jurys` = null (unassigned)
+
+**To Upload via API**:
+```
+POST /api/soutenances/importer
+Form-data: file=<your-excel-file>
+```
+Excel must have columns at positions 0-4 as described above.
+
+---
+
+## Quick Reference for All Members
+
+### Member 2 (Planning):
+- **Read**: Section 6 (Business Rules)
+- **Use**: `IPlanningDAO`, `ISoutenanceDAO`, `ISalleDAO`, `IProfesseurDAO`
+- **Output**: Planned defenses with all fields set
+
+### Member 3 (Frontend):
+- **Read**: Section 7 (REST Endpoints)
+- **Use**: Angular HTTP client to consume JSON APIs
+- **Output**: Professional UI for professor
+
+### Member 4 (Testing):
+- **Read**: Section 7 (REST Endpoints), Section 4 (Coupling)
+- **Use**: Spring Test, `mvn test`
+- **Output**: Test reports, bug fixes
+
+### All Members:
+- **NEVER modify**: `com.pfe.dao.interfaces.*`, `com.pfe.dto.*`
+- **ALWAYS use**: Interfaces for data access, DTOs for data transfer
+- **ASK Member 1** if you need model/impl changes
+
+---
+
+## Project Validation Checklist (For Professor)
+
+- [ ] Backend compiles: `mvn clean compile`
+- [ ] Tests pass: `mvn test`
+- [ ] H2 database auto-creates tables (dev profile)
+- [ ] Excel files import correctly (professors, students, defenses)
+- [ ] REST endpoints return valid JSON
+- [ ] Member 2's algorithm assigns dates/rooms/jurys
+- [ ] Member 3's frontend displays all data correctly
+- [ ] No Spring Boot used (pure Spring MVC 6)
+- [ ] Weak coupling respected (only interfaces exposed)
+- [ ] Documentation clear for all team members
