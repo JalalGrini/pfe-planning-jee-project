@@ -225,68 +225,170 @@ Step 1: User uploads "Sujets de Soutenance" Excel via website
 
 ---
 
-## 6. Business Rules for Member 2 (Planning Algorithm)
+## 6. Complete Business Rules (ALL 9 Categories)
 
-### Input Data (from `IPlanningDAO.getDonneesPlanification()`):
+### 1. Time Slot Rules (Créneaux Horaires)
+| Rule | Value | Explanation |
+|------|-------|-------------|
+| Slots per day | 9h00, 10h00, 11h00, 14h00, 15h00, 16h00, 17h00 | 7 slots per room per day |
+| Defense duration | Exactly 1 hour | From 9h00 to 10h00, etc. |
+| Lunch break | 12h00 to 14h00 | 2-hour break (no defenses) |
+
+**Implementation for Member 2**:
+- Use ONLY these time slots: 9h, 10h, 11h, 14h, 15h, 16h, 17h
+- Each defense occupies exactly 1 full hour (heureDebut = slot time, heureFin = slot time + 1h)
+- Never schedule during 12h-14h
+
+---
+
+### 2. Professor Rules (Jurys)
+| Rule | Value | Explanation |
+|------|-------|-------------|
+| Minimum rest | 1 hour minimum | Prof at 9h cannot be at 10h (too close) |
+| Valid example | 9h and 11h | 1 hour rest between (10h free) |
+| Invalid example | 9h and 10h | 0 hour rest → FORBIDDEN |
+| President | 1 per soutenance | Designated among the 3 professors |
+| Jury members | 2 per soutenance | Accompany the president |
+| Jury composition | 1 president + 2 jury = 3 profs | Random draw (no intelligent model yet) |
+| No dual location | Not at same hour | A prof can only be in one room at time T |
+
+**Implementation for Member 2**:
+- Check `findAvailableForDate()` to verify 1h rest between defenses
+- Each soutenance MUST have exactly 3 professors (1 president + 2 jury)
+- Use random assignment for now (Member 2 can improve later)
+
+---
+
+### 3. Room Rules (Salles)
+| Rule | Value | Explanation |
+|------|-------|-------------|
+| Number of rooms | 4 | Salle 101, 102, 103, 104 (modifiable) |
+| Capacity per room | 1 defense per slot | A room cannot have 2 defenses at same time |
+| Unavailability | Configurable | Possibility to mark a room as unavailable |
+
+**Implementation for Member 2**:
+- Loop through 4 rooms in round-robin fashion
+- Check `salle.isDisponible() == true` before assignment
+- No double-booking: same room, same time slot
+
+---
+
+### 4. Student & Filière Rules
+| Rule | Value | Explanation |
+|------|-------|-------------|
+| Existing filières | 3 | "Ingénierie des Données", "Génie Informatique", "Transformation Digitale & IA" |
+| Possible binômes | Yes | If 2 students have same SUJET_PFE → ONE defense with 2 students |
+| Binôme size | 2 students max | No more than 2 per soutenance |
+| Equity between filières | SAME NUMBER per day | Each day, each filière must have same number of students defending |
+| Equity example | 3 ID, 3 GI, 3 TD per day | Not 5 ID, 2 GI, 2 TD |
+
+**Implementation for Member 2**:
+- Count students per filière each day
+- Alert if imbalance detected (e.g., 5 ID vs 2 GI)
+- Distribute evenly: 3 ID, 3 GI, 3 TD per day maximum
+
+---
+
+### 5. Planning Capacity Rules
+| Rule | Formula | Example |
+|------|---------|---------|
+| Capacity per day | nb_salles × 7 slots | 4 × 7 = 28 defenses max/day |
+| Days needed | ceil(nb_soutenances_total / 28) | 100 soutenances → 4 days (100/28 = 3.57 → 4 days) |
+| User modification | User can choose days | Remove weekends, holidays via calendar |
+
+**Implementation for Member 2**:
+- Maximum 28 defenses per day (4 rooms × 7 slots)
+- Calculate minimum days: `ceil(total_soutenances / 28)`
+- Allow user to select specific days (exclude weekends/holidays)
+
+---
+
+### 6. Excel Import Rules
+| Rule | Behavior |
+|------|------------|
+| Mandatory columns | CNE, NOM, PRENOM, FILIERE, SUJET_PFE |
+| Binômes | Same SUJET_PFE on 2 rows → create ONE defense with 2 students |
+| Non-existent filière | Row ignored + error log (no blocking) |
+| Non-existent student | Student is automatically created |
+| Duplicate CNE | Handled by uniqueness constraint in database |
+
+**Files to upload** (via website, NOT pre-loaded):
+- Student files: `Ingénierie des données 3_Email.xlsx`, etc.
+- Defense topics: `exemples_soutenances.xlsx` (or user-uploaded file)
+- Cell positions (0-4) as described in Section 8
+
+---
+
+### 7. Export Rules (PDF Fiches)
+| Rule | Explanation |
+|------|-------------|
+| Folder structure | Day 1/ → Prof X (president)/ → fiche_soutenance1.pdf |
+| Template | Based on `Fiche_Evaluation_PFE_NomEtudiant_Prenom.docx` |
+| Content | Students, subject, president, jury, date, time, room |
+
+**Implementation for Member 2** (Post-Planning):
+```
+fiches_evaluation/
+├── Jour_1/
+│   ├── Dupont_Jean/
+│   │   ├── fiche_soutenance1.pdf    ← Based on template
+│   │   └── fiche_soutenance2.pdf
+│   └── Martin_Marie/
+│       └── fiche_soutenance3.pdf
+├── Jour_2/
+│   └── ...
+```
+
+- Use `Soutenance.getPresident().getNom()` + `getPrenom()` for folder name
+- Generate PDF from `.docx` template (or create programmatically)
+- Store in configurable path, make downloadable via: `GET /api/soutenances/{id}/evaluation`
+
+---
+
+### 8. Planning Algorithm Rules (Member 2 TO IMPLEMENT)
+| Rule | Status | Explanation |
+|------|--------|-------------|
+| Date assignment | TO IMPLEMENT | Member 2 must assign a date to each soutenance |
+| Time slot assignment | TO IMPLEMENT | 9h,10h,11h,14h,15h,16h,17h |
+| Room assignment | TO IMPLEMENT | Loop through 4 rooms (round-robin) |
+| Jury assignment | Random (for now) | 3 profs among 32 available |
+| President | Random | One of the 3 assigned profs |
+| 1h rest management | TO IMPLEMENT | Check via `findAvailableForDate()` |
+| Filière equity | TO IMPLEMENT | Count students per filière each day |
+
+**Input** (from `IPlanningDAO.getDonneesPlanification()`):
 - List of `Soutenance` objects with:
   - `titre` (topic), `etudiants` (1-2 students), `filiere`
   - `date = null`, `heureDebut = null`, `heureFin = null`
   - `salle = null`, `president = null`, `jurys = []`
 
-### Assignment Rules:
-1. **Date Assignment**:
-   - Defenses Monday to Friday only
-   - No weekend defenses
-   - Group by filière (same filière defenses on same day if possible)
+**Output**:
+- Updated `Soutenance` objects with ALL fields populated
+- Saved back via `ISoutenanceDAO.save()`
+- Fiches d'évaluation generated and stored in president folders
 
-2. **Time Assignment**:
-   - Defense duration: 30-45 minutes
-   - Morning session: 08:30-12:00
-   - Afternoon session: 14:00-17:30
-   - 15-minute break between defenses
+---
 
-3. **Room Assignment**:
-   - Room capacity ≥ number of attendees (students + jury + audience)
-   - Room must be `disponible = true`
-   - No double-booking (same room, same time)
+### 9. Validation Rules (Member 3 - AFTER Member 2)
+| Rule | Explanation |
+|------|-------------|
+| Check room overlap | A room cannot have 2 defenses per slot |
+| Check prof rest | A prof cannot have 2 consecutive defenses |
+| Filière equity | Count students per filière each day, alert if imbalance |
+| PDF generation | Create one fiche per soutenance with Word template |
 
-4. **Jury Assignment** (EXACTLY 3 members total):
-   - **1 President**: Senior professor, not in same filière as students
-   - **2 Jury members**: Professors available at defense time (exactly 2, not more)
-   - No conflicts: Same professor can't be in two defenses simultaneously
-   - Balance jury workload across professors
-   - **Important**: Each soutenance MUST have exactly 1 president + 2 jury members (3 total)
+**To validate**:
+1. Verify no room has 2 defenses at same time slot
+2. Verify professors have ≥1h rest between defenses
+3. Verify each day has equal students per filière (±1 tolerance)
+4. Verify fiches d'évaluation are generated for each soutenance
+5. Verify folder structure: `Jour_X/President_Nom/fiche.pdf`
 
-5. **Conflict Avoidance**:
-   - Same professor: No overlapping defenses
-   - Same room: No overlapping defenses
-   - Student binômes: Must be in same defense (already handled by import)
+---
 
-### Output:
-Updated `Soutenance` objects with all fields populated, saved back via `ISoutenanceDAO.save()`.
-
-### Fiche d'Évaluation Generation (Post-Planning):
-After planning, for EACH soutenance:
-1. **Generate Fiche d'Évaluation**:
-   - Create evaluation form (PDF or Excel format)
-   - Include: Soutenance topic, student names, jury members, date/time
-   - Add scoring fields (technical score, presentation, jury comments)
-
-2. **Storage Structure**:
-   ```
-   fiches_evaluation/
-   ├── Dupont_Jean/              ← Folder named after PRESIDENT (nom_prenom)
-   │   ├── evaluation_001.pdf     ← Fiche for soutenance with Dupont as president
-   │   └── evaluation_002.pdf
-   ├── Martin_Marie/
-   │   └── evaluation_003.pdf
-   └── ...
-   ```
-
-3. **Implementation**:
-   - Use `Soutenance.getPresident().getNom()` + `getPrenom()` for folder name
-   - Store in `src/main/resources/fiches_evaluation/` or configurable path
-   - Make fiches downloadable via REST endpoint: `GET /api/soutenances/{id}/evaluation`
+### Quick Reference for Member 2:
+✅ **MUST DO**: Assign date, time (7 slots), room (round-robin), jury (1+2=3), check 1h rest, ensure filière equity
+❌ **MUST NOT DO**: Assign same prof to overlapping defenses, schedule during lunch (12h-14h), create uneven filière distribution
 
 ---
 
