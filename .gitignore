@@ -1,0 +1,14 @@
+# Build output
+pfe-planning-jee-project/target/
+pfe-planning-jee-project/frontend/dist/
+
+# Dependencies
+pfe-planning-jee-project/frontend/node_modules/
+
+# Local environment
+pfe-planning-jee-project/frontend/.env
+
+# IDE and OS files
+pfe-planning-jee-project/.idea/
+Thumbs.db
+Desktop.ini
