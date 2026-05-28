@@ -1,17 +1,55 @@
-# Maven
-target/
+# ==========================================
+# Maven & Build Outputs
+# ==========================================
+**/target/
+*.war
+*.ear
+*.jar
 
-# IDE
+# ==========================================
+# Frontend (Node / React / JS)
+# ==========================================
+**/node_modules/
+**/dist/
+**/build/
+.eslintcache
+*.local
+
+# ==========================================
+# IDEs & System Files
+# ==========================================
 .idea/
 *.iml
 .classpath
 .project
 .settings/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 
-# Logs
+# ==========================================
+# Python & Data (For your scratch/generation scripts)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+# Uncomment the line below if Full_Data_Import.xlsx shouldn't be pushed
+# Full_Data_Import.xlsx 
+
+# ==========================================
+# Logs & Environment Configuration
+# ==========================================
 *.log
 logs/
+.env
+.env.local
+.env.*.local
 
-# OS
+# ==========================================
+# OS Files
+# ==========================================
 Thumbs.db
 Desktop.ini
+.DS_Store
